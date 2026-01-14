@@ -1,0 +1,239 @@
+name: Build and Deploy to NuGet
+
+on:
+  push:
+    branches: [ main, dev ]
+    paths-ignore:
+      - '*.md'
+  workflow_dispatch:
+    inputs:
+      deploy_to_nuget:
+        description: 'Deploy to NuGet'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: write
+  actions: write
+  id-token: write
+
+env:
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET
+      shell: pwsh
+      run: |
+        Write-Host "📥 Installing .NET 10..."
+        Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile "dotnet-install.ps1"
+        ./dotnet-install.ps1 -Channel 10.0 -InstallDir "$env:ProgramFiles\dotnet"
+        echo "$env:ProgramFiles\dotnet" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        dotnet --list-sdks
+
+    - name: Get version variables
+      id: version
+      shell: pwsh
+      run: |
+        $majorVersion = "${{ vars.VERSION_MAJOR }}"
+        if ([string]::IsNullOrEmpty($majorVersion)) { $majorVersion = "1" }
+
+        $minorVersion = "${{ vars.VERSION_MINOR }}"
+        if ([string]::IsNullOrEmpty($minorVersion)) { $minorVersion = "0" }
+
+        $patchVersion = "${{ vars.VERSION_PATCH }}"
+        if ([string]::IsNullOrEmpty($patchVersion)) { $patchVersion = "0" }
+
+        $previewSuffix = "${{ vars.VERSION_PREVIEW_SUFFIX }}"
+        if ([string]::IsNullOrEmpty($previewSuffix)) { $previewSuffix = "0" }
+
+        $ref = "${{ github.ref }}"
+        if ($ref -eq "refs/heads/main") {
+          $version = "$majorVersion.$minorVersion.$patchVersion"
+          $nextPatchVersion = [int]$patchVersion + 1
+          echo "NEXT_PATCH_VERSION=$nextPatchVersion" >> $env:GITHUB_OUTPUT
+          Write-Host "✅ Main branch version: $version"
+        }
+        elseif ($ref -eq "refs/heads/dev") {
+          $nextPreviewSuffix = [int]$previewSuffix + 1
+          $version = "$majorVersion.$minorVersion.$patchVersion-preview.$nextPreviewSuffix"
+          echo "NEXT_PREVIEW_SUFFIX=$nextPreviewSuffix" >> $env:GITHUB_OUTPUT
+          Write-Host "✅ Dev branch version: $version"
+        }
+        else {
+          $timestamp = Get-Date -Format "yyyyMMdd-HHmmss" -AsUTC
+          $version = "$majorVersion.$minorVersion.$patchVersion-CI-$timestamp"
+          Write-Host "✅ Feature branch version: $version"
+        }
+
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        echo "BRANCH_TYPE=$(if ($ref -eq 'refs/heads/main') { 'main' } elseif ($ref -eq 'refs/heads/dev') { 'dev' } else { 'feature' })" >> $env:GITHUB_OUTPUT
+        Write-Host "📦 Final version: $version"
+
+    - name: Restore dependencies
+      working-directory: src
+      run: dotnet restore
+
+    - name: Build
+      working-directory: src
+      run: dotnet build --configuration Release --no-restore /p:Version=${{ steps.version.outputs.VERSION }}
+
+    - name: Test
+      working-directory: src
+      run: dotnet test --configuration Release --no-build
+
+    - name: Pack
+      working-directory: src
+      run: dotnet pack CloudNimble.Supermemory/CloudNimble.Supermemory.csproj --configuration Release --no-build --output ../artifacts /p:PackageVersion=${{ steps.version.outputs.VERSION }}
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v6
+      with:
+        name: nuget-packages
+        path: ./artifacts/*.nupkg
+        retention-days: 7
+
+  deploy:
+    needs: build
+    runs-on: windows-latest
+    environment: production
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_to_nuget == 'true')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v7
+      with:
+        name: nuget-packages
+        path: ./artifacts
+
+    - name: Get version data
+      id: version
+      shell: pwsh
+      run: |
+        $majorVersion = "${{ vars.VERSION_MAJOR }}"
+        if ([string]::IsNullOrEmpty($majorVersion)) { $majorVersion = "1" }
+
+        $minorVersion = "${{ vars.VERSION_MINOR }}"
+        if ([string]::IsNullOrEmpty($minorVersion)) { $minorVersion = "0" }
+
+        $patchVersion = "${{ vars.VERSION_PATCH }}"
+        if ([string]::IsNullOrEmpty($patchVersion)) { $patchVersion = "0" }
+
+        $previewSuffix = "${{ vars.VERSION_PREVIEW_SUFFIX }}"
+        if ([string]::IsNullOrEmpty($previewSuffix)) { $previewSuffix = "0" }
+
+        $ref = "${{ github.ref }}"
+        if ($ref -eq "refs/heads/main") {
+          $nextPatchVersion = [int]$patchVersion + 1
+          echo "NEXT_PATCH_VERSION=$nextPatchVersion" >> $env:GITHUB_OUTPUT
+          echo "BRANCH_TYPE=main" >> $env:GITHUB_OUTPUT
+        }
+        elseif ($ref -eq "refs/heads/dev") {
+          $nextPreviewSuffix = [int]$previewSuffix + 1
+          echo "NEXT_PREVIEW_SUFFIX=$nextPreviewSuffix" >> $env:GITHUB_OUTPUT
+          echo "BRANCH_TYPE=dev" >> $env:GITHUB_OUTPUT
+        }
+
+    - name: NuGet login (Trusted Publishing)
+      uses: nuget/login@v1
+      id: nuget_login
+      with:
+        user: ${{ secrets.NUGET_USER }}
+
+    - name: Push to NuGet
+      shell: bash
+      run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ steps.nuget_login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+    - name: Update preview suffix (dev branch)
+      if: steps.version.outputs.BRANCH_TYPE == 'dev'
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
+      run: |
+        $nextSuffix = "${{ steps.version.outputs.NEXT_PREVIEW_SUFFIX }}"
+        Write-Host "🔄 Updating VERSION_PREVIEW_SUFFIX to $nextSuffix"
+        gh variable set VERSION_PREVIEW_SUFFIX --body "$nextSuffix"
+
+    - name: Update patch version (main branch)
+      if: steps.version.outputs.BRANCH_TYPE == 'main'
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
+      run: |
+        $nextPatch = "${{ steps.version.outputs.NEXT_PATCH_VERSION }}"
+        Write-Host "🔄 Updating VERSION_PATCH to $nextPatch"
+        gh variable set VERSION_PATCH --body "$nextPatch"
+        gh variable set VERSION_PREVIEW_SUFFIX --body "0"
+
+  create-release:
+    needs: [build, deploy]
+    runs-on: windows-latest
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.event.inputs.deploy_to_nuget == 'true')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v7
+      with:
+        name: nuget-packages
+        path: ./artifacts
+
+    - name: Get version from build
+      id: version
+      shell: pwsh
+      run: |
+        # Extract version from package name
+        $packageFile = Get-ChildItem ./artifacts/*.nupkg | Select-Object -First 1
+        $version = $packageFile.Name -replace '.*\.(.+?)\.nupkg', '$1'
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        Write-Host "📦 Creating release for version: $version"
+
+    - name: Prepare Release Content
+      id: create_release
+      shell: bash
+      run: |
+        version="${{ steps.version.outputs.VERSION }}"
+        {
+          echo "RELEASE_BODY<<BODY"
+          echo "## CloudNimble.Supermemory v${version}"
+          echo ""
+          echo "### Installation"
+          echo "\`\`\`bash"
+          echo "dotnet add package CloudNimble.Supermemory --version ${version}"
+          echo "\`\`\`"
+          echo ""
+          echo "### What's Changed"
+          echo "See [full changelog](https://github.com/${{ github.repository }}/commits/v${version})"
+          echo "BODY"
+        } >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ steps.version.outputs.VERSION }}
+        name: Release v${{ steps.version.outputs.VERSION }}
+        body: ${{ steps.create_release.outputs.RELEASE_BODY }}
+        files: ./artifacts/*.nupkg
+        draft: false
+        prerelease: false

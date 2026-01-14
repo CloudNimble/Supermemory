@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:supermemory.ai)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__Mintlify__SearchMintlify",
+      "WebFetch(domain:api.github.com)",
+      "Bash(dotnet:*)",
+      "WebFetch(domain:api.supermemory.ai)",
+      "WebFetch(domain:docs.supermemory.ai)",
+      "mcp__github__get_file_contents",
+      "mcp__github__search_code",
+      "WebFetch(domain:github.com)",
+      "WebSearch"
+    ]
+  }
+}

@@ -1,0 +1,530 @@
+### Supermemory API Integration Tests
+### Visual Studio / VS Code REST Client / JetBrains HTTP Client
+### Set your API key in http-client.env.json or as environment variable
+
+@baseUrl = https://api.supermemory.ai
+@apiKey = {{$dotenv SUPERMEMORY_API_KEY}}
+
+### ============================================================================
+### DOCUMENTS - Add, Get, Update, Delete
+### ============================================================================
+
+### Add Document - Text content
+# @name addDocument
+POST {{baseUrl}}/v3/documents
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "content": "This is a detailed article about machine learning concepts and applications in modern software development.",
+    "containerTag": "integration_tests",
+    "customId": "test_doc_001",
+    "metadata": {
+        "category": "technology",
+        "isPublic": true,
+        "readingTime": 5,
+        "source": "integration_test"
+    }
+}
+
+###
+
+### Add Document - URL content
+POST {{baseUrl}}/v3/documents
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "content": "https://example.com/sample-article",
+    "containerTag": "integration_tests",
+    "customId": "test_doc_url_001"
+}
+
+###
+
+### Batch Add Documents
+# @name batchAddDocuments
+POST {{baseUrl}}/v3/documents/batch
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "containerTag": "integration_tests",
+    "documents": [
+        {
+            "content": "First document about artificial intelligence fundamentals.",
+            "customId": "batch_doc_001",
+            "metadata": {
+                "topic": "AI",
+                "order": 1
+            }
+        },
+        {
+            "content": "Second document covering neural network architectures.",
+            "customId": "batch_doc_002",
+            "metadata": {
+                "topic": "Neural Networks",
+                "order": 2
+            }
+        },
+        {
+            "content": "Third document explaining deep learning techniques.",
+            "customId": "batch_doc_003",
+            "metadata": {
+                "topic": "Deep Learning",
+                "order": 3
+            }
+        }
+    ]
+}
+
+###
+
+### Get Document by ID
+# Replace {documentId} with actual ID from addDocument response
+@documentId = {{addDocument.response.body.id}}
+GET {{baseUrl}}/v3/documents/{{documentId}}
+Authorization: Bearer {{apiKey}}
+
+###
+
+### Get Document by Custom ID
+GET {{baseUrl}}/v3/documents/test_doc_001
+Authorization: Bearer {{apiKey}}
+
+###
+
+### Update Document
+PATCH {{baseUrl}}/v3/documents/{{documentId}}
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "content": "Updated content: This article now covers advanced machine learning concepts including transformers and attention mechanisms.",
+    "metadata": {
+        "category": "technology",
+        "isPublic": true,
+        "readingTime": 8,
+        "source": "integration_test",
+        "updated": true
+    }
+}
+
+###
+
+### List Documents
+# @name listDocuments
+POST {{baseUrl}}/v3/documents/list
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "containerTags": ["integration_tests"],
+    "page": 1,
+    "limit": 10
+}
+
+###
+
+### List Documents - With Filters
+POST {{baseUrl}}/v3/documents/list
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "containerTags": ["integration_tests"],
+    "page": 1,
+    "limit": 20,
+    "filters": {
+        "AND": [
+            {
+                "key": "category",
+                "value": "technology"
+            }
+        ]
+    }
+}
+
+###
+
+### Get Processing Documents
+GET {{baseUrl}}/v3/documents/processing
+Authorization: Bearer {{apiKey}}
+
+###
+
+### Delete Document by ID
+DELETE {{baseUrl}}/v3/documents/{{documentId}}
+Authorization: Bearer {{apiKey}}
+
+###
+
+### Delete Document by Custom ID
+DELETE {{baseUrl}}/v3/documents/test_doc_001
+Authorization: Bearer {{apiKey}}
+
+###
+
+### Bulk Delete Documents
+DELETE {{baseUrl}}/v3/documents/bulk
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "containerTags": ["integration_tests_cleanup"]
+}
+
+###
+
+### Bulk Delete Documents - By IDs
+DELETE {{baseUrl}}/v3/documents/bulk
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "ids": ["batch_doc_001", "batch_doc_002", "batch_doc_003"]
+}
+
+### ============================================================================
+### SEARCH - v3 and v4
+### ============================================================================
+
+### Search Documents (v3)
+# @name searchDocuments
+POST {{baseUrl}}/v3/search
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "q": "machine learning concepts",
+    "limit": 10,
+    "rerank": true,
+    "containerTags": ["integration_tests"]
+}
+
+###
+
+### Search Documents - With Filters
+POST {{baseUrl}}/v3/search
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "q": "artificial intelligence",
+    "limit": 5,
+    "rerank": true,
+    "includeFullDocs": true,
+    "filters": {
+        "AND": [
+            {
+                "key": "category",
+                "value": "technology",
+                "filterType": "metadata"
+            }
+        ]
+    }
+}
+
+###
+
+### Search Documents - Rewrite Query
+POST {{baseUrl}}/v3/search
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "q": "how does ML work?",
+    "limit": 10,
+    "rewriteQuery": true,
+    "containerTags": ["integration_tests"]
+}
+
+###
+
+### Search Documents - With Chunk Threshold
+POST {{baseUrl}}/v3/search
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "q": "neural networks",
+    "limit": 10,
+    "chunkThreshold": 0.5,
+    "containerTags": ["integration_tests"]
+}
+
+###
+
+### Search Memories (v4) - Low Latency
+# @name searchMemories
+POST {{baseUrl}}/v4/search
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "q": "machine learning",
+    "categoriesFilter": ["integration_tests"]
+}
+
+###
+
+### Search Memories (v4) - With System Prompt
+POST {{baseUrl}}/v4/search
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "q": "What are the key concepts?",
+    "systemPrompt": "You are a helpful assistant answering questions about technology.",
+    "categoriesFilter": ["integration_tests"]
+}
+
+### ============================================================================
+### MEMORIES - v4 Operations
+### ============================================================================
+
+### Forget Memory (Delete)
+DELETE {{baseUrl}}/v4/memories
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "memoryId": "memory_to_forget_001"
+}
+
+###
+
+### Update Memory
+PATCH {{baseUrl}}/v4/memories
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "memoryId": "memory_to_update_001",
+    "content": "Updated memory content with new information."
+}
+
+### ============================================================================
+### SETTINGS - Organization Configuration
+### ============================================================================
+
+### Get Settings
+# @name getSettings
+GET {{baseUrl}}/v3/settings
+Authorization: Bearer {{apiKey}}
+
+###
+
+### Update Settings
+PATCH {{baseUrl}}/v3/settings
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "systemPrompt": "You are a helpful AI assistant with access to a knowledge base."
+}
+
+### ============================================================================
+### CONNECTIONS - Third-party Integrations
+### ============================================================================
+
+### List Connections
+# @name listConnections
+POST {{baseUrl}}/v3/connections/list
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{}
+
+###
+
+### Create Notion Connection
+POST {{baseUrl}}/v3/connections/notion
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "accessToken": "your_notion_access_token"
+}
+
+###
+
+### Create Google Drive Connection
+POST {{baseUrl}}/v3/connections/google_drive
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "accessToken": "your_google_drive_access_token"
+}
+
+###
+
+### Create OneDrive Connection
+POST {{baseUrl}}/v3/connections/onedrive
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "accessToken": "your_onedrive_access_token"
+}
+
+###
+
+### Create GitHub Connection
+POST {{baseUrl}}/v3/connections/github
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "accessToken": "your_github_access_token"
+}
+
+###
+
+### Get Connection by ID
+@connectionId = connection_id_here
+GET {{baseUrl}}/v3/connections/{{connectionId}}
+Authorization: Bearer {{apiKey}}
+
+###
+
+### Get Connection Resources
+GET {{baseUrl}}/v3/connections/{{connectionId}}/resources
+Authorization: Bearer {{apiKey}}
+
+###
+
+### Configure Connection
+POST {{baseUrl}}/v3/connections/{{connectionId}}/configure
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "resourceIds": ["resource_1", "resource_2"],
+    "containerTag": "synced_content"
+}
+
+###
+
+### Delete Connection by ID
+DELETE {{baseUrl}}/v3/connections/{{connectionId}}
+Authorization: Bearer {{apiKey}}
+
+###
+
+### Delete All Connections for Provider
+DELETE {{baseUrl}}/v3/connections/notion
+Authorization: Bearer {{apiKey}}
+
+###
+
+### Import Documents from Provider
+POST {{baseUrl}}/v3/connections/notion/import
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "resourceIds": ["page_id_1", "page_id_2"],
+    "containerTag": "imported_notion"
+}
+
+###
+
+### List Provider Documents
+POST {{baseUrl}}/v3/connections/notion/documents
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "connectionId": "{{connectionId}}"
+}
+
+### ============================================================================
+### PROFILE - v4 User Profile
+### ============================================================================
+
+### Get/Generate Profile
+# @name getProfile
+POST {{baseUrl}}/v4/profile
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "containerTags": ["integration_tests"]
+}
+
+### ============================================================================
+### FILE UPLOAD
+### ============================================================================
+
+### Upload File (PDF, Image, etc.)
+### Note: Use multipart/form-data for actual file upload
+### This example shows the structure - actual file upload requires a client
+# POST {{baseUrl}}/v3/documents/file
+# Authorization: Bearer {{apiKey}}
+# Content-Type: multipart/form-data; boundary=----FormBoundary
+#
+# ------FormBoundary
+# Content-Disposition: form-data; name="file"; filename="document.pdf"
+# Content-Type: application/pdf
+#
+# <binary file content>
+# ------FormBoundary
+# Content-Disposition: form-data; name="containerTag"
+#
+# integration_tests
+# ------FormBoundary--
+
+### ============================================================================
+### ERROR SCENARIOS - Test Error Handling
+### ============================================================================
+
+### Unauthorized - Missing API Key
+POST {{baseUrl}}/v3/search
+Content-Type: application/json
+
+{
+    "q": "test query"
+}
+
+###
+
+### Unauthorized - Invalid API Key
+POST {{baseUrl}}/v3/search
+Authorization: Bearer invalid_api_key_12345
+Content-Type: application/json
+
+{
+    "q": "test query"
+}
+
+###
+
+### Bad Request - Empty Query
+POST {{baseUrl}}/v3/search
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "q": ""
+}
+
+###
+
+### Not Found - Invalid Document ID
+GET {{baseUrl}}/v3/documents/nonexistent_document_id_12345
+Authorization: Bearer {{apiKey}}
+
+### ============================================================================
+### CLEANUP - Remove Test Data
+### ============================================================================
+
+### Bulk Delete All Integration Test Documents
+DELETE {{baseUrl}}/v3/documents/bulk
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+    "containerTags": ["integration_tests"]
+}

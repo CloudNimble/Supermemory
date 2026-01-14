@@ -11,6 +11,12 @@
 *.sln.docstates
 *.env
 
+# HTTP Client private environment files (contain API keys)
+http-client.private.env.json
+
+# Downloaded OpenAPI spec (can be regenerated)
+openapi.yml
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
