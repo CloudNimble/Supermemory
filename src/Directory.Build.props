@@ -19,7 +19,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<PackageId>$(MSBuildProjectName.Replace('CloudNimble.', ''))</PackageId>
+		<!--<PackageId>$(MSBuildProjectName.Replace('CloudNimble.', ''))</PackageId>-->
 		<Product>Supermemory SDK</Product>
 		<Version>1.0.0</Version>
 		<PackageVersion>1.0.0</PackageVersion>
@@ -100,6 +100,7 @@
 		<PackageReference Include="coverlet.collector" Version="*" />
 		<PackageReference Include="FluentAssertions" Version="6.*" PrivateAssets="All" />
 		<PackageReference Include="FluentAssertions.Analyzers" Version="0.*" PrivateAssets="All" />
+		<PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="*" />
 		<PackageReference Include="MSTest" Version="4.*" />
 
 		<!-- Enable parallel test execution in MSTest 4 and later. -->

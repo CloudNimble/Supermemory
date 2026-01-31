@@ -1,12 +1,12 @@
 using System.Text.Json.Serialization;
 
-namespace CloudNimble.Supermemory.Models.Search
+namespace CloudNimble.Supermemory.Models.Profile
 {
 
     /// <summary>
-    /// Represents the response from a document search.
+    /// Represents search results within a profile response.
     /// </summary>
-    public class SearchDocumentsResponse
+    public class ProfileSearchResults
     {
 
         #region Properties
@@ -15,16 +15,16 @@ namespace CloudNimble.Supermemory.Models.Search
         /// Gets or sets the search results.
         /// </summary>
         [JsonPropertyName("results")]
-        public List<SearchResult> Results { get; set; } = [];
+        public List<object> Results { get; set; } = [];
 
         /// <summary>
-        /// Gets or sets the time taken to execute the search in milliseconds.
+        /// Gets or sets the time taken in milliseconds.
         /// </summary>
         [JsonPropertyName("timing")]
         public double Timing { get; set; }
 
         /// <summary>
-        /// Gets or sets the total number of results.
+        /// Gets or sets the total result count.
         /// </summary>
         [JsonPropertyName("total")]
         public int Total { get; set; }

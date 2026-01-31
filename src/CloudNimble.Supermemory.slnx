@@ -2,9 +2,11 @@
 <Solution>
   <Folder Name="/Core/">
     <Project Path="CloudNimble.Supermemory/CloudNimble.Supermemory.csproj" />
+    <Project Path="CloudNimble.Agents.AI.Supermemory/CloudNimble.Agents.AI.Supermemory.csproj" />
   </Folder>
   <Folder Name="/Samples/">
     <Project Path="CloudNimble.Supermemory.Samples.Console/CloudNimble.Supermemory.Samples.Console.csproj" />
+    <Project Path="CloudNimble.Agents.AI.Supermemory.Samples/CloudNimble.Agents.AI.Supermemory.Samples.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path="../.gitignore" />
@@ -15,5 +17,6 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="CloudNimble.Supermemory.Tests/CloudNimble.Supermemory.Tests.csproj" />
+    <Project Path="CloudNimble.Agents.AI.Tests.Supermemory/CloudNimble.Agents.AI.Tests.Supermemory.csproj" />
   </Folder>
 </Solution>

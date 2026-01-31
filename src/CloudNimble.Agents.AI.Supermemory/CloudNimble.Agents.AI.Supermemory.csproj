@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<DocumentationFile>$(DocumentationFile)\$(AssemblyName).xml</DocumentationFile>
+		<IsAotCompatible>true</IsAotCompatible>
+		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+		<!-- Allow prerelease dependency on Microsoft.Agents.AI until it's GA -->
+		<NoWarn>$(NoWarn);NU5104</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<Description>Microsoft Agent Framework integration for Supermemory - semantic memory and conversation storage for AI agents.</Description>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.*" />
+		<PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.*-*" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.*-*" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\CloudNimble.Supermemory\CloudNimble.Supermemory.csproj" />
+	</ItemGroup>
+
+</Project>

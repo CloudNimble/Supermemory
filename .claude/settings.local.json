@@ -11,7 +11,14 @@
       "mcp__github__get_file_contents",
       "mcp__github__search_code",
       "WebFetch(domain:github.com)",
-      "WebSearch"
+      "WebSearch",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_type",
+      "WebFetch(domain:jamiemaguire.net)",
+      "WebFetch(domain:www.nuget.org)",
+      "Bash(cd:*)",
+      "Bash(gh api:*)",
+      "Bash(cat:*)"
     ]
   }
 }

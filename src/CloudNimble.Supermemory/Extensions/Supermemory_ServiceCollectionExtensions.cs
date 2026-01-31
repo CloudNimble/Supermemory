@@ -1,12 +1,12 @@
-using Microsoft.Extensions.DependencyInjection;
+using CloudNimble.Supermemory;
 
-namespace CloudNimble.Supermemory.Extensions
+namespace Microsoft.Extensions.DependencyInjection
 {
 
     /// <summary>
     /// Extension methods for registering Supermemory services with dependency injection.
     /// </summary>
-    public static class ServiceCollectionExtensions
+    public static class Supermemory_ServiceCollectionExtensions
     {
 
         /// <summary>

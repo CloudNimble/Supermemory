@@ -422,3 +422,4 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+/coverage-report/Summary.txt
