@@ -96,7 +96,10 @@ jobs:
 
     - name: Pack
       working-directory: src
-      run: dotnet pack CloudNimble.Supermemory/CloudNimble.Supermemory.csproj --configuration Release --no-build --output ../artifacts /p:PackageVersion=${{ steps.version.outputs.VERSION }}
+      shell: bash
+      run: |
+        dotnet pack CloudNimble.Supermemory/CloudNimble.Supermemory.csproj --configuration Release --no-build --output ../artifacts /p:PackageVersion=${{ steps.version.outputs.VERSION }}
+        dotnet pack CloudNimble.Agents.AI.Supermemory/CloudNimble.Agents.AI.Supermemory.csproj --configuration Release --no-build --output ../artifacts /p:PackageVersion=${{ steps.version.outputs.VERSION }}
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v6
@@ -151,15 +154,28 @@ jobs:
           echo "BRANCH_TYPE=dev" >> $env:GITHUB_OUTPUT
         }
 
-    - name: NuGet login (Trusted Publishing)
+    - name: Try NuGet Trusted Publishing
+      id: nuget_trusted
       uses: nuget/login@v1
-      id: nuget_login
+      continue-on-error: true
       with:
-        user: ${{ secrets.NUGET_USER }}
+        allowed-package-owners: CloudNimble
 
-    - name: Push to NuGet
+    - name: Push to NuGet (Trusted Publishing)
+      if: steps.nuget_trusted.outcome == 'success'
       shell: bash
-      run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ steps.nuget_login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      run: |
+        echo "🔐 Using Trusted Publishing..."
+        dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+    - name: Push to NuGet (API Key Fallback)
+      if: steps.nuget_trusted.outcome == 'failure'
+      shell: bash
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: |
+        echo "🔑 Trusted Publishing not available, using API key..."
+        dotnet nuget push ./artifacts/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
 
     - name: Update preview suffix (dev branch)
       if: steps.version.outputs.BRANCH_TYPE == 'dev'
@@ -216,11 +232,18 @@ jobs:
         version="${{ steps.version.outputs.VERSION }}"
         {
           echo "RELEASE_BODY<<BODY"
-          echo "## CloudNimble.Supermemory v${version}"
+          echo "## Supermemory .NET SDK v${version}"
           echo ""
           echo "### Installation"
+          echo ""
+          echo "**Core SDK:**"
           echo "\`\`\`bash"
-          echo "dotnet add package CloudNimble.Supermemory --version ${version}"
+          echo "dotnet add package Supermemory --version ${version}"
+          echo "\`\`\`"
+          echo ""
+          echo "**Microsoft Agent Framework Integration:**"
+          echo "\`\`\`bash"
+          echo "dotnet add package CloudNimble.Agents.AI.Supermemory --version ${version}"
           echo "\`\`\`"
           echo ""
           echo "### What's Changed"
