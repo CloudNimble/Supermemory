@@ -3,7 +3,7 @@
 A rock-solid, AOT-compatible .NET SDK for [Supermemory](https://supermemory.ai) - the AI memory layer for your applications.
 
 [![NuGet](https://img.shields.io/nuget/v/Supermemory.svg)](https://www.nuget.org/packages/Supermemory)
-[![NuGet](https://img.shields.io/nuget/v/Agents.AI.Supermemory.svg?label=nuget%20%28agents%29)](https://www.nuget.org/packages/Agents.AI.Supermemory)
+[![NuGet](https://img.shields.io/nuget/v/ClouNimble.Agents.AI.Supermemory.svg?label=nuget%20%28agents%29)](https://www.nuget.org/packages/CloudNimble.Agents.AI.Supermemory)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
@@ -23,7 +23,7 @@ A rock-solid, AOT-compatible .NET SDK for [Supermemory](https://supermemory.ai) 
 | Package | Description |
 |---------|-------------|
 | [Supermemory](https://www.nuget.org/packages/Supermemory) | Core API client for Supermemory |
-| [Agents.AI.Supermemory](https://www.nuget.org/packages/Agents.AI.Supermemory) | Microsoft Agent Framework integration |
+| [CloudNimble.Agents.AI.Supermemory](https://www.nuget.org/packages/CloudNimble.Agents.AI.Supermemory) | Microsoft Agent Framework integration |
 
 ## Installation
 
@@ -36,7 +36,7 @@ dotnet add package Supermemory
 ### Microsoft Agent Framework Integration
 
 ```bash
-dotnet add package Agents.AI.Supermemory
+dotnet add package CloudNimble.Agents.AI.Supermemory
 ```
 
 ## Quick Start
@@ -290,7 +290,7 @@ catch (SupermemoryException ex)
 
 ## Microsoft Agent Framework Integration
 
-The `Agents.AI.Supermemory` package provides seamless integration with [Microsoft Agent Framework](https://github.com/microsoft/agents), enabling AI agents with persistent memory.
+The `CloudNimble.Agents.AI.Supermemory` package provides seamless integration with [Microsoft Agent Framework](https://github.com/microsoft/agents), enabling AI agents with persistent memory.
 
 ### Two Complementary Providers
 
@@ -563,4 +563,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - [Supermemory API Documentation](https://docs.supermemory.ai)
 - [Microsoft Agent Framework](https://github.com/microsoft/agents)
 - [NuGet Package - Supermemory](https://www.nuget.org/packages/Supermemory)
-- [NuGet Package - Agents.AI.Supermemory](https://www.nuget.org/packages/Agents.AI.Supermemory)
+- [NuGet Package - CloudNimble.Agents.AI.Supermemory](https://www.nuget.org/packages/CloudNimble.Agents.AI.Supermemory)
