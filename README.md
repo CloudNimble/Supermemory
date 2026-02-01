@@ -3,7 +3,7 @@
 A rock-solid, AOT-compatible .NET SDK for [Supermemory](https://supermemory.ai) - the AI memory layer for your applications.
 
 [![NuGet](https://img.shields.io/nuget/v/Supermemory.svg)](https://www.nuget.org/packages/Supermemory)
-[![NuGet](https://img.shields.io/nuget/v/ClouNimble.Agents.AI.Supermemory.svg?label=nuget%20%28agents%29)](https://www.nuget.org/packages/CloudNimble.Agents.AI.Supermemory)
+[![NuGet](https://img.shields.io/nuget/v/CloudNimble.Agents.AI.Supermemory.svg?label=nuget%20%28agents%29)](https://www.nuget.org/packages/CloudNimble.Agents.AI.Supermemory)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
