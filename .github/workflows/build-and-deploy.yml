@@ -96,10 +96,7 @@ jobs:
 
     - name: Pack
       working-directory: src
-      shell: bash
-      run: |
-        dotnet pack CloudNimble.Supermemory/CloudNimble.Supermemory.csproj --configuration Release --no-build --output ../artifacts /p:PackageVersion=${{ steps.version.outputs.VERSION }}
-        dotnet pack CloudNimble.Agents.AI.Supermemory/CloudNimble.Agents.AI.Supermemory.csproj --configuration Release --no-build --output ../artifacts /p:PackageVersion=${{ steps.version.outputs.VERSION }}
+      run: dotnet pack CloudNimble.Supermemory.slnx --configuration Release --no-build --output ../artifacts /p:PackageVersion=${{ steps.version.outputs.VERSION }}
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v6
