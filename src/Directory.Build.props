@@ -100,7 +100,7 @@
 
     <ItemGroup Condition=" $(IsTestProject) == 'true' ">
         <PackageReference Include="coverlet.collector" Version="*" />
-        <PackageReference Include="FluentAssertions" Version="6.*" PrivateAssets="All" />
+        <PackageReference Include="FluentAssertions" Version="8.8.0" PrivateAssets="All" />
         <PackageReference Include="FluentAssertions.Analyzers" Version="0.*" PrivateAssets="All" />
         <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="*" />
         <PackageReference Include="MSTest" Version="4.*" />
