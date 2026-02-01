@@ -2,25 +2,54 @@ using CloudNimble.Supermemory;
 using CloudNimble.Supermemory.Exceptions;
 using CloudNimble.Supermemory.Models.Documents;
 using CloudNimble.Supermemory.Models.Search;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 Console.WriteLine("CloudNimble.Supermemory Sample Application");
 Console.WriteLine("==========================================");
 Console.WriteLine();
 
-// Get API key from environment variable
-var apiKey = Environment.GetEnvironmentVariable("SUPERMEMORY_API_KEY");
-if (string.IsNullOrWhiteSpace(apiKey))
+// Build the host with configuration from:
+// - appsettings.json
+// - appsettings.{Environment}.json
+// - Environment variables (Supermemory__ApiKey)
+// - User secrets (in Development)
+var builder = Host.CreateApplicationBuilder(args);
+
+// Add Supermemory services using the AOT-compatible overload
+// Configuration is read manually and passed to the options
+builder.Services.AddSupermemory(options =>
 {
-    Console.WriteLine("Please set the SUPERMEMORY_API_KEY environment variable.");
-    Console.WriteLine("Example: set SUPERMEMORY_API_KEY=your-api-key");
-    return;
-}
+    var section = builder.Configuration.GetSection("Supermemory");
+    options.ApiKey = section["ApiKey"];
+
+    var baseUrl = section["BaseUrl"];
+    if (!string.IsNullOrWhiteSpace(baseUrl))
+    {
+        options.BaseUrl = baseUrl;
+    }
+
+    var timeoutStr = section["Timeout"];
+    if (!string.IsNullOrWhiteSpace(timeoutStr) && TimeSpan.TryParse(timeoutStr, out var timeout))
+    {
+        options.Timeout = timeout;
+    }
+
+    var maxRetriesStr = section["MaxRetries"];
+    if (!string.IsNullOrWhiteSpace(maxRetriesStr) && int.TryParse(maxRetriesStr, out var maxRetries))
+    {
+        options.MaxRetries = maxRetries;
+    }
+});
+
+using var host = builder.Build();
+
+// Get the configured client from DI
+var client = host.Services.GetRequiredService<SupermemoryClient>();
 
 try
 {
-    // Create the client
-    using var client = new SupermemoryClient(apiKey);
-
     // Example 1: Add a document
     Console.WriteLine("Adding a document...");
     var addResponse = await client.Documents.AddAsync(new AddDocumentRequest
@@ -101,7 +130,10 @@ try
 catch (SupermemoryAuthenticationException ex)
 {
     Console.WriteLine($"Authentication failed: {ex.Message}");
-    Console.WriteLine("Please check your API key.");
+    Console.WriteLine("Please configure your API key using one of these methods:");
+    Console.WriteLine("  1. User secrets: dotnet user-secrets set \"Supermemory:ApiKey\" \"your-api-key\"");
+    Console.WriteLine("  2. Environment variable: Supermemory__ApiKey=your-api-key");
+    Console.WriteLine("  3. appsettings.json: { \"Supermemory\": { \"ApiKey\": \"your-api-key\" } }");
 }
 catch (SupermemoryApiException ex)
 {

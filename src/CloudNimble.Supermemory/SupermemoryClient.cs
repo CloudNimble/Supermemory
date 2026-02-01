@@ -1,5 +1,5 @@
-using System.Net.Http.Headers;
 using CloudNimble.Supermemory.Resources;
+using Microsoft.Extensions.Options;
 
 namespace CloudNimble.Supermemory
 {
@@ -10,16 +10,23 @@ namespace CloudNimble.Supermemory
     /// <remarks>
     /// <para>
     /// This client provides access to all Supermemory API resources through typed resource properties.
+    /// It is designed to be used with dependency injection and the <see cref="IOptions{TOptions}"/> pattern.
     /// </para>
     /// <para>
-    /// Example usage:
+    /// Example usage with dependency injection:
     /// <code>
-    /// using var client = new SupermemoryClient("your-api-key");
-    /// var response = await client.Documents.AddAsync(new AddDocumentRequest
+    /// // In Program.cs
+    /// builder.Services.AddSupermemory();
+    ///
+    /// // In your service
+    /// public class MyService(SupermemoryClient supermemory)
     /// {
-    ///     Content = "https://example.com",
-    ///     ContainerTags = ["my-container"]
-    /// });
+    ///     public async Task SearchAsync(string query)
+    ///     {
+    ///         var results = await supermemory.Search.SearchDocumentsAsync(
+    ///             new SearchDocumentsRequest { Query = query });
+    ///     }
+    /// }
     /// </code>
     /// </para>
     /// </remarks>
@@ -30,8 +37,6 @@ namespace CloudNimble.Supermemory
 
         private readonly HttpClient _httpClient;
         private readonly SupermemoryClientOptions _options;
-        private readonly bool _ownsHttpClient;
-        private bool _disposed;
 
         private DocumentsResource? _documents;
         private SearchResource? _search;
@@ -79,81 +84,38 @@ namespace CloudNimble.Supermemory
         #region Constructors
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SupermemoryClient"/> class with an API key.
+        /// Initializes a new instance of the <see cref="SupermemoryClient"/> class.
         /// </summary>
-        /// <param name="apiKey">The API key for authentication.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="apiKey"/> is null or empty.</exception>
-        public SupermemoryClient(string apiKey)
-            : this(new SupermemoryClientOptions(apiKey))
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SupermemoryClient"/> class with options.
-        /// </summary>
-        /// <param name="options">The client options.</param>
+        /// <param name="httpClient">
+        /// The <see cref="HttpClient"/> configured by <see cref="IHttpClientFactory"/>.
+        /// This client is pre-configured with base address, timeout, and authorization headers.
+        /// </param>
+        /// <param name="options">
+        /// The configuration options for the client, typically bound from the "Supermemory" configuration section.
+        /// </param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpClient"/> is null.</exception>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="options"/> is null.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the options are invalid.</exception>
-        public SupermemoryClient(SupermemoryClientOptions options)
+        /// <exception cref="ArgumentException">Thrown when the options fail validation.</exception>
+        /// <remarks>
+        /// <para>
+        /// This constructor is designed to be used with the typed client pattern via <see cref="IHttpClientFactory"/>.
+        /// The <see cref="HttpClient"/> lifecycle is managed by the factory and should not be disposed manually.
+        /// </para>
+        /// <para>
+        /// Register the client using the <c>AddSupermemory()</c> extension method:
+        /// <code>
+        /// builder.Services.AddSupermemory();
+        /// </code>
+        /// </para>
+        /// </remarks>
+        public SupermemoryClient(HttpClient httpClient, IOptions<SupermemoryClientOptions> options)
         {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
+            ArgumentNullException.ThrowIfNull(httpClient);
+            ArgumentNullException.ThrowIfNull(options);
+
+            _options = options.Value;
             _options.Validate();
-
-            if (_options.HttpClient != null)
-            {
-                _httpClient = _options.HttpClient;
-                _ownsHttpClient = false;
-            }
-            else
-            {
-                _httpClient = CreateHttpClient(_options);
-                _ownsHttpClient = true;
-            }
-
-            ConfigureHttpClient(_httpClient, _options);
-        }
-
-        #endregion
-
-        #region Private Methods
-
-        /// <summary>
-        /// Creates a new HttpClient with optimal settings for API communication.
-        /// </summary>
-        /// <param name="options">The client options.</param>
-        /// <returns>A configured HttpClient instance.</returns>
-        private static HttpClient CreateHttpClient(SupermemoryClientOptions options)
-        {
-            // Use SocketsHttpHandler for efficient connection pooling
-            var handler = new SocketsHttpHandler
-            {
-                PooledConnectionLifetime = TimeSpan.FromMinutes(15),
-                PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
-                MaxConnectionsPerServer = 10
-            };
-
-            return new HttpClient(handler)
-            {
-                Timeout = options.Timeout
-            };
-        }
-
-        /// <summary>
-        /// Configures the HttpClient with required headers.
-        /// </summary>
-        /// <param name="httpClient">The HttpClient to configure.</param>
-        /// <param name="options">The client options.</param>
-        private static void ConfigureHttpClient(HttpClient httpClient, SupermemoryClientOptions options)
-        {
-            httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            if (!string.IsNullOrWhiteSpace(options.ApiKey))
-            {
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", options.ApiKey);
-            }
-
-            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("CloudNimble.Supermemory/1.0.0");
+            _httpClient = httpClient;
         }
 
         #endregion
@@ -161,21 +123,12 @@ namespace CloudNimble.Supermemory
         #region IDisposable
 
         /// <summary>
-        /// Disposes of the client and its resources.
+        /// Disposes of the client. This is a no-op when using <see cref="IHttpClientFactory"/>
+        /// since the <see cref="HttpClient"/> lifecycle is managed by the factory.
         /// </summary>
         public void Dispose()
         {
-            if (_disposed)
-            {
-                return;
-            }
-
-            if (_ownsHttpClient)
-            {
-                _httpClient.Dispose();
-            }
-
-            _disposed = true;
+            // No-op: HttpClient lifecycle is managed by IHttpClientFactory
         }
 
         #endregion

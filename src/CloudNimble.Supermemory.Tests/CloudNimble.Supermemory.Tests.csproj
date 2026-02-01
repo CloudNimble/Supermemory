@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -6,6 +6,8 @@
 
     <ItemGroup>
         <PackageReference Include="Breakdance.DotHttp" Version="8.*-*" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.*" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.*" />
     </ItemGroup>
 
     <ItemGroup>

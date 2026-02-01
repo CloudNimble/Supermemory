@@ -1,6 +1,7 @@
 using System;
 using System.Net.Http;
 using FluentAssertions;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CloudNimble.Supermemory.Tests
@@ -8,60 +9,69 @@ namespace CloudNimble.Supermemory.Tests
 
     /// <summary>
     /// Tests for <see cref="SupermemoryClient"/>.
-    /// These tests are excluded until API call mocking is implemented.
     /// </summary>
     [TestClass]
-    [Ignore("Tests excluded until API call mocking is implemented")]
     public class SupermemoryClientTests
     {
+
+        #region Helper Methods
+
+        private static IOptions<SupermemoryClientOptions> CreateOptions(string apiKey = "test-api-key")
+        {
+            return Options.Create(new SupermemoryClientOptions
+            {
+                ApiKey = apiKey
+            });
+        }
+
+        private static HttpClient CreateHttpClient()
+        {
+            return new HttpClient
+            {
+                BaseAddress = new Uri("https://api.supermemory.ai")
+            };
+        }
+
+        #endregion
 
         #region Constructor Tests
 
         [TestMethod]
-        public void Constructor_WithApiKey_CreatesClient()
+        public void Constructor_WithValidParameters_CreatesClient()
         {
-            // Arrange & Act
-            using var client = new SupermemoryClient("test-api-key");
+            // Arrange
+            var httpClient = CreateHttpClient();
+            var options = CreateOptions();
+
+            // Act
+            var client = new SupermemoryClient(httpClient, options);
 
             // Assert
             client.Should().NotBeNull();
         }
 
         [TestMethod]
-        public void Constructor_WithOptions_CreatesClient()
+        public void Constructor_WithNullHttpClient_ThrowsArgumentNullException()
         {
             // Arrange
-            var options = new SupermemoryClientOptions("test-api-key");
+            var options = CreateOptions();
 
             // Act
-            using var client = new SupermemoryClient(options);
+            var action = () => new SupermemoryClient(null!, options);
 
             // Assert
-            client.Should().NotBeNull();
-        }
-
-        [TestMethod]
-        public void Constructor_WithHttpClientOption_UsesProvidedClient()
-        {
-            // Arrange
-            var httpClient = new HttpClient();
-            var options = new SupermemoryClientOptions
-            {
-                HttpClient = httpClient
-            };
-
-            // Act
-            using var client = new SupermemoryClient(options);
-
-            // Assert
-            client.Should().NotBeNull();
+            action.Should().Throw<ArgumentNullException>()
+                .WithParameterName("httpClient");
         }
 
         [TestMethod]
         public void Constructor_WithNullOptions_ThrowsArgumentNullException()
         {
+            // Arrange
+            var httpClient = CreateHttpClient();
+
             // Act
-            var action = () => new SupermemoryClient((SupermemoryClientOptions)null!);
+            var action = () => new SupermemoryClient(httpClient, null!);
 
             // Assert
             action.Should().Throw<ArgumentNullException>()
@@ -69,16 +79,17 @@ namespace CloudNimble.Supermemory.Tests
         }
 
         [TestMethod]
-        public void Constructor_WithInvalidOptions_ThrowsInvalidOperationException()
+        public void Constructor_WithInvalidOptions_ThrowsArgumentException()
         {
             // Arrange
-            var options = new SupermemoryClientOptions();
+            var httpClient = CreateHttpClient();
+            var options = Options.Create(new SupermemoryClientOptions()); // Missing ApiKey
 
             // Act
-            var action = () => new SupermemoryClient(options);
+            var action = () => new SupermemoryClient(httpClient, options);
 
             // Assert
-            action.Should().Throw<InvalidOperationException>();
+            action.Should().Throw<ArgumentException>();
         }
 
         #endregion
@@ -89,7 +100,7 @@ namespace CloudNimble.Supermemory.Tests
         public void Documents_ReturnsDocumentsResource()
         {
             // Arrange
-            using var client = new SupermemoryClient("test-api-key");
+            var client = new SupermemoryClient(CreateHttpClient(), CreateOptions());
 
             // Act
             var documents = client.Documents;
@@ -102,7 +113,7 @@ namespace CloudNimble.Supermemory.Tests
         public void Documents_ReturnsSameInstance()
         {
             // Arrange
-            using var client = new SupermemoryClient("test-api-key");
+            var client = new SupermemoryClient(CreateHttpClient(), CreateOptions());
 
             // Act
             var documents1 = client.Documents;
@@ -116,7 +127,7 @@ namespace CloudNimble.Supermemory.Tests
         public void Search_ReturnsSearchResource()
         {
             // Arrange
-            using var client = new SupermemoryClient("test-api-key");
+            var client = new SupermemoryClient(CreateHttpClient(), CreateOptions());
 
             // Act
             var search = client.Search;
@@ -129,7 +140,7 @@ namespace CloudNimble.Supermemory.Tests
         public void Search_ReturnsSameInstance()
         {
             // Arrange
-            using var client = new SupermemoryClient("test-api-key");
+            var client = new SupermemoryClient(CreateHttpClient(), CreateOptions());
 
             // Act
             var search1 = client.Search;
@@ -143,7 +154,7 @@ namespace CloudNimble.Supermemory.Tests
         public void Memories_ReturnsMemoriesResource()
         {
             // Arrange
-            using var client = new SupermemoryClient("test-api-key");
+            var client = new SupermemoryClient(CreateHttpClient(), CreateOptions());
 
             // Act
             var memories = client.Memories;
@@ -156,7 +167,7 @@ namespace CloudNimble.Supermemory.Tests
         public void Memories_ReturnsSameInstance()
         {
             // Arrange
-            using var client = new SupermemoryClient("test-api-key");
+            var client = new SupermemoryClient(CreateHttpClient(), CreateOptions());
 
             // Act
             var memories1 = client.Memories;
@@ -170,7 +181,7 @@ namespace CloudNimble.Supermemory.Tests
         public void Connections_ReturnsConnectionsResource()
         {
             // Arrange
-            using var client = new SupermemoryClient("test-api-key");
+            var client = new SupermemoryClient(CreateHttpClient(), CreateOptions());
 
             // Act
             var connections = client.Connections;
@@ -183,7 +194,7 @@ namespace CloudNimble.Supermemory.Tests
         public void Connections_ReturnsSameInstance()
         {
             // Arrange
-            using var client = new SupermemoryClient("test-api-key");
+            var client = new SupermemoryClient(CreateHttpClient(), CreateOptions());
 
             // Act
             var connections1 = client.Connections;
@@ -197,7 +208,7 @@ namespace CloudNimble.Supermemory.Tests
         public void Settings_ReturnsSettingsResource()
         {
             // Arrange
-            using var client = new SupermemoryClient("test-api-key");
+            var client = new SupermemoryClient(CreateHttpClient(), CreateOptions());
 
             // Act
             var settings = client.Settings;
@@ -210,7 +221,7 @@ namespace CloudNimble.Supermemory.Tests
         public void Settings_ReturnsSameInstance()
         {
             // Arrange
-            using var client = new SupermemoryClient("test-api-key");
+            var client = new SupermemoryClient(CreateHttpClient(), CreateOptions());
 
             // Act
             var settings1 = client.Settings;
@@ -224,7 +235,7 @@ namespace CloudNimble.Supermemory.Tests
         public void Profile_ReturnsProfileResource()
         {
             // Arrange
-            using var client = new SupermemoryClient("test-api-key");
+            var client = new SupermemoryClient(CreateHttpClient(), CreateOptions());
 
             // Act
             var profile = client.Profile;
@@ -237,7 +248,7 @@ namespace CloudNimble.Supermemory.Tests
         public void Profile_ReturnsSameInstance()
         {
             // Arrange
-            using var client = new SupermemoryClient("test-api-key");
+            var client = new SupermemoryClient(CreateHttpClient(), CreateOptions());
 
             // Act
             var profile1 = client.Profile;
@@ -245,57 +256,6 @@ namespace CloudNimble.Supermemory.Tests
 
             // Assert
             profile1.Should().BeSameAs(profile2);
-        }
-
-        #endregion
-
-        #region Dispose Tests
-
-        [TestMethod]
-        public void Dispose_DisposesOwnedHttpClient()
-        {
-            // Arrange
-            var client = new SupermemoryClient("test-api-key");
-
-            // Act
-            client.Dispose();
-
-            // Assert - no exception thrown
-        }
-
-        [TestMethod]
-        public void Dispose_CalledTwice_DoesNotThrow()
-        {
-            // Arrange
-            var client = new SupermemoryClient("test-api-key");
-
-            // Act
-            client.Dispose();
-            var action = () => client.Dispose();
-
-            // Assert
-            action.Should().NotThrow();
-        }
-
-        [TestMethod]
-        public void Dispose_WithProvidedHttpClient_DoesNotDisposeIt()
-        {
-            // Arrange
-            var httpClient = new HttpClient();
-            var options = new SupermemoryClientOptions
-            {
-                HttpClient = httpClient
-            };
-            var client = new SupermemoryClient(options);
-
-            // Act
-            client.Dispose();
-
-            // Assert - HttpClient should still be usable
-            var action = () => httpClient.BaseAddress = new Uri("http://example.com");
-            action.Should().NotThrow();
-
-            httpClient.Dispose();
         }
 
         #endregion

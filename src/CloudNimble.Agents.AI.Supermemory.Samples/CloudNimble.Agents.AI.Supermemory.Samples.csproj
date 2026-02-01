@@ -5,6 +5,7 @@
 		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<UserSecretsId>CloudNimble.Agents.AI.Supermemory.Samples</UserSecretsId>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -12,10 +13,21 @@
 		<PackageReference Include="Azure.Identity" Version="1.13.*" />
 		<PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.*" />
 		<PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.*-*" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.*" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.*" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\CloudNimble.Agents.AI.Supermemory\CloudNimble.Agents.AI.Supermemory.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="appsettings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="appsettings.Development.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 
 </Project>

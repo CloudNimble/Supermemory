@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.Net.Http;
 
 namespace CloudNimble.Supermemory.Tests
 {
@@ -26,20 +25,6 @@ namespace CloudNimble.Supermemory.Tests
             options.Timeout.Should().Be(TimeSpan.FromSeconds(SupermemoryClientOptions.DefaultTimeoutSeconds));
             options.MaxRetries.Should().Be(SupermemoryClientOptions.DefaultMaxRetries);
             options.ApiKey.Should().BeNull();
-            options.HttpClient.Should().BeNull();
-        }
-
-        [TestMethod]
-        public void ApiKeyConstructor_SetsApiKey()
-        {
-            // Arrange
-            const string apiKey = "test-api-key";
-
-            // Act
-            var options = new SupermemoryClientOptions(apiKey);
-
-            // Assert
-            options.ApiKey.Should().Be(apiKey);
         }
 
         #endregion
@@ -47,7 +32,7 @@ namespace CloudNimble.Supermemory.Tests
         #region Validation Tests
 
         [TestMethod]
-        public void Validate_ThrowsWhenApiKeyAndHttpClientAreMissing()
+        public void Validate_ThrowsWhenApiKeyIsMissing()
         {
             // Arrange
             var options = new SupermemoryClientOptions();
@@ -56,30 +41,34 @@ namespace CloudNimble.Supermemory.Tests
             var action = () => options.Validate();
 
             // Assert
-            action.Should().Throw<InvalidOperationException>()
-                .WithMessage("*API key*");
+            action.Should().Throw<ArgumentException>()
+                .WithParameterName("ApiKey");
+        }
+
+        [TestMethod]
+        public void Validate_ThrowsWhenApiKeyIsWhitespace()
+        {
+            // Arrange
+            var options = new SupermemoryClientOptions
+            {
+                ApiKey = "   "
+            };
+
+            // Act
+            var action = () => options.Validate();
+
+            // Assert
+            action.Should().Throw<ArgumentException>()
+                .WithParameterName("ApiKey");
         }
 
         [TestMethod]
         public void Validate_DoesNotThrowWhenApiKeyIsProvided()
         {
             // Arrange
-            var options = new SupermemoryClientOptions("test-key");
-
-            // Act
-            var action = () => options.Validate();
-
-            // Assert
-            action.Should().NotThrow();
-        }
-
-        [TestMethod]
-        public void Validate_DoesNotThrowWhenHttpClientIsProvided()
-        {
-            // Arrange
             var options = new SupermemoryClientOptions
             {
-                HttpClient = new HttpClient()
+                ApiKey = "test-key"
             };
 
             // Act
@@ -93,8 +82,9 @@ namespace CloudNimble.Supermemory.Tests
         public void Validate_ThrowsWhenBaseUrlIsEmpty()
         {
             // Arrange
-            var options = new SupermemoryClientOptions("test-key")
+            var options = new SupermemoryClientOptions
             {
+                ApiKey = "test-key",
                 BaseUrl = string.Empty
             };
 
@@ -102,16 +92,17 @@ namespace CloudNimble.Supermemory.Tests
             var action = () => options.Validate();
 
             // Assert
-            action.Should().Throw<InvalidOperationException>()
-                .WithMessage("*BaseUrl*");
+            action.Should().Throw<ArgumentException>()
+                .WithParameterName("BaseUrl");
         }
 
         [TestMethod]
         public void Validate_ThrowsWhenTimeoutIsZero()
         {
             // Arrange
-            var options = new SupermemoryClientOptions("test-key")
+            var options = new SupermemoryClientOptions
             {
+                ApiKey = "test-key",
                 Timeout = TimeSpan.Zero
             };
 
@@ -119,16 +110,35 @@ namespace CloudNimble.Supermemory.Tests
             var action = () => options.Validate();
 
             // Assert
-            action.Should().Throw<InvalidOperationException>()
-                .WithMessage("*Timeout*");
+            action.Should().Throw<ArgumentOutOfRangeException>()
+                .WithParameterName("Timeout");
+        }
+
+        [TestMethod]
+        public void Validate_ThrowsWhenTimeoutIsNegative()
+        {
+            // Arrange
+            var options = new SupermemoryClientOptions
+            {
+                ApiKey = "test-key",
+                Timeout = TimeSpan.FromSeconds(-1)
+            };
+
+            // Act
+            var action = () => options.Validate();
+
+            // Assert
+            action.Should().Throw<ArgumentOutOfRangeException>()
+                .WithParameterName("Timeout");
         }
 
         [TestMethod]
         public void Validate_ThrowsWhenMaxRetriesIsNegative()
         {
             // Arrange
-            var options = new SupermemoryClientOptions("test-key")
+            var options = new SupermemoryClientOptions
             {
+                ApiKey = "test-key",
                 MaxRetries = -1
             };
 
@@ -136,8 +146,25 @@ namespace CloudNimble.Supermemory.Tests
             var action = () => options.Validate();
 
             // Assert
-            action.Should().Throw<InvalidOperationException>()
-                .WithMessage("*MaxRetries*");
+            action.Should().Throw<ArgumentOutOfRangeException>()
+                .WithParameterName("MaxRetries");
+        }
+
+        [TestMethod]
+        public void Validate_AllowsZeroMaxRetries()
+        {
+            // Arrange
+            var options = new SupermemoryClientOptions
+            {
+                ApiKey = "test-key",
+                MaxRetries = 0
+            };
+
+            // Act
+            var action = () => options.Validate();
+
+            // Assert
+            action.Should().NotThrow();
         }
 
         #endregion
@@ -151,6 +178,29 @@ namespace CloudNimble.Supermemory.Tests
             SupermemoryClientOptions.DefaultBaseUrl.Should().Be("https://api.supermemory.ai");
             SupermemoryClientOptions.DefaultTimeoutSeconds.Should().Be(60);
             SupermemoryClientOptions.DefaultMaxRetries.Should().Be(2);
+        }
+
+        #endregion
+
+        #region Property Tests
+
+        [TestMethod]
+        public void Properties_CanBeSetAndRead()
+        {
+            // Arrange & Act
+            var options = new SupermemoryClientOptions
+            {
+                ApiKey = "my-api-key",
+                BaseUrl = "https://custom.api.com",
+                Timeout = TimeSpan.FromSeconds(120),
+                MaxRetries = 5
+            };
+
+            // Assert
+            options.ApiKey.Should().Be("my-api-key");
+            options.BaseUrl.Should().Be("https://custom.api.com");
+            options.Timeout.Should().Be(TimeSpan.FromSeconds(120));
+            options.MaxRetries.Should().Be(5);
         }
 
         #endregion

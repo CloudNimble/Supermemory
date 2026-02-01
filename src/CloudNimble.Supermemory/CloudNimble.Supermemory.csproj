@@ -15,8 +15,52 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.*" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.*" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.*" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="10.0.*" />
 	</ItemGroup>
+
+	<!-- Generate version info at compile time for AOT-compatible version access -->
+	<Target Name="GenerateVersionInfo" BeforeTargets="CoreCompile">
+		<PropertyGroup>
+			<_VersionInfoContent>
+// &lt;auto-generated&gt;
+// This file is generated at build time. Do not edit manually.
+// &lt;/auto-generated&gt;
+
+namespace CloudNimble.Supermemory.Generated
+{
+    /// &lt;summary&gt;
+    /// Provides compile-time version information for AOT compatibility.
+    /// &lt;/summary&gt;
+    internal static class VersionInfo
+    {
+        /// &lt;summary&gt;
+        /// The full version string (e.g., "1.0.0" or "1.0.0-preview.1").
+        /// &lt;/summary&gt;
+        public const string Version = "$(Version)"%3B
+
+        /// &lt;summary&gt;
+        /// The assembly version (e.g., "1.0.0.0").
+        /// &lt;/summary&gt;
+        public const string AssemblyVersion = "$(AssemblyVersion)"%3B
+
+        /// &lt;summary&gt;
+        /// The file version (e.g., "1.0.0.0").
+        /// &lt;/summary&gt;
+        public const string FileVersion = "$(FileVersion)"%3B
+    }
+}
+			</_VersionInfoContent>
+		</PropertyGroup>
+		<WriteLinesToFile File="$(IntermediateOutputPath)VersionInfo.g.cs"
+		                  Lines="$(_VersionInfoContent)"
+		                  Overwrite="true"
+		                  WriteOnlyWhenDifferent="true" />
+		<ItemGroup>
+			<Compile Include="$(IntermediateOutputPath)VersionInfo.g.cs" />
+		</ItemGroup>
+	</Target>
 
 </Project>

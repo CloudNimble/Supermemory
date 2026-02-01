@@ -1,72 +1,79 @@
 using Azure.AI.OpenAI;
 using Azure.Identity;
 using CloudNimble.Agents.AI.Supermemory;
-using CloudNimble.Supermemory;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 Console.WriteLine("Supermemory + Microsoft Agent Framework Demo");
 Console.WriteLine("=============================================\n");
 
-// Get configuration from environment variables
-var supermemoryApiKey = Environment.GetEnvironmentVariable("SUPERMEMORY_API_KEY");
-var azureOpenAIEndpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
+// Build the host with configuration from:
+// - appsettings.json
+// - appsettings.{Environment}.json
+// - Environment variables (Supermemory__ApiKey, AzureOpenAI__Endpoint)
+// - User secrets (in Development)
+var builder = Host.CreateApplicationBuilder(args);
 
-if (string.IsNullOrEmpty(supermemoryApiKey))
+// Validate configuration
+var azureOpenAIEndpoint = builder.Configuration["AzureOpenAI:Endpoint"];
+if (string.IsNullOrWhiteSpace(azureOpenAIEndpoint))
 {
-    Console.WriteLine("Error: SUPERMEMORY_API_KEY environment variable is not set.");
-    Console.WriteLine("Please set it and try again.");
+    Console.WriteLine("Error: AzureOpenAI:Endpoint is not configured.");
+    Console.WriteLine("Configure it using one of these methods:");
+    Console.WriteLine("  1. User secrets: dotnet user-secrets set \"AzureOpenAI:Endpoint\" \"https://your-resource.openai.azure.com\"");
+    Console.WriteLine("  2. Environment variable: AzureOpenAI__Endpoint=https://your-resource.openai.azure.com");
+    Console.WriteLine("  3. appsettings.json: { \"AzureOpenAI\": { \"Endpoint\": \"https://your-resource.openai.azure.com\" } }");
     return;
 }
 
-if (string.IsNullOrEmpty(azureOpenAIEndpoint))
+// Add Supermemory services - configuration is automatically bound from the "Supermemory" section
+builder.Services.AddSupermemory();
+
+// Add Azure OpenAI client
+builder.Services.AddSingleton(sp =>
 {
-    Console.WriteLine("Error: AZURE_OPENAI_ENDPOINT environment variable is not set.");
-    Console.WriteLine("Please set it and try again.");
-    return;
-}
+    var config = sp.GetRequiredService<IConfiguration>();
+    var endpoint = config["AzureOpenAI:Endpoint"]!;
+    return new AzureOpenAIClient(new Uri(endpoint), new DefaultAzureCredential());
+});
 
-// Create Supermemory client
-using var supermemoryClient = new SupermemoryClient(supermemoryApiKey);
-Console.WriteLine("Supermemory client initialized.");
+// Register IChatClient from Azure OpenAI
+builder.Services.AddSingleton<IChatClient>(sp =>
+    sp.GetRequiredService<AzureOpenAIClient>()
+      .GetChatClient("gpt-4o-mini")
+      .AsIChatClient());
 
-// Create Azure OpenAI chat client
-var azureClient = new AzureOpenAIClient(
-    new Uri(azureOpenAIEndpoint),
-    new DefaultAzureCredential());
-
-var chatClient = azureClient.GetChatClient("gpt-4o-mini").AsIChatClient();
-Console.WriteLine("Azure OpenAI client initialized.\n");
-
-// Create agent with both Supermemory providers configured
-var agent = chatClient.AsAIAgent(new ChatClientAgentOptions
-{
-    Name = "MemoryAgent",
-    Description = "An AI agent with persistent memory powered by Supermemory",
-    ChatOptions = new ChatOptions
+// Add the Supermemory-enabled agent - everything is resolved from DI
+builder.Services.AddSupermemoryAgent(
+    configureAgent: options =>
     {
-        // Instructions will be augmented by the context provider
-    }
-}
-.WithSupermemory(
-    supermemoryClient,
-    contextOptions: new SupermemoryContextProviderOptions
-    {
-        DefaultContainerTag = "demo-user-{sessionId}",
-        RetrievalStrategy = MemoryRetrievalStrategy.ProfileFirst,
-        EnableConversationStorage = true,
-        StorageFormat = ConversationStorageFormat.Markdown,
-        SearchLimit = 5,
-        MinimumSimilarityScore = 0.6
+        options.Name = "MemoryAgent";
+        options.Description = "An AI agent with persistent memory powered by Supermemory";
     },
-    historyOptions: new SupermemoryChatHistoryProviderOptions
+    configureContext: options =>
     {
-        DefaultContainerTag = "demo-user-{sessionId}",
-        MaxMessages = 50,
-        DocumentIdPrefix = "chat-msg-"
-    }));
+        options.DefaultContainerTag = "demo-user-{sessionId}";
+        options.RetrievalStrategy = MemoryRetrievalStrategy.ProfileFirst;
+        options.EnableConversationStorage = true;
+        options.StorageFormat = ConversationStorageFormat.Markdown;
+        options.SearchLimit = 5;
+        options.MinimumSimilarityScore = 0.6;
+    },
+    configureHistory: options =>
+    {
+        options.DefaultContainerTag = "demo-user-{sessionId}";
+        options.MaxMessages = 50;
+        options.DocumentIdPrefix = "chat-msg-";
+    });
 
-Console.WriteLine("Agent created with Supermemory integration.\n");
+using var host = builder.Build();
+
+// Get the fully-configured agent from DI
+var agent = host.Services.GetRequiredService<ChatClientAgent>();
+Console.WriteLine("Agent initialized from DI.\n");
 
 // Get a new session
 var session = await agent.GetNewSessionAsync();
@@ -107,7 +114,7 @@ Console.WriteLine("-------------------------------------------\n");
 
 // Demonstrate changing container tag mid-conversation
 Console.WriteLine("Switching to a different user context...\n");
-if (contextProvider != null)
+if (contextProvider is not null)
 {
     contextProvider.ContainerTag = "demo-user-different";
     Console.WriteLine($"New Container Tag: {contextProvider.ContainerTag}\n");
@@ -121,7 +128,7 @@ Console.WriteLine($"Agent: {response}\n");
 
 // Switch back and test recall
 Console.WriteLine("Switching back to original user context...\n");
-if (contextProvider != null)
+if (contextProvider is not null)
 {
     contextProvider.ContainerTag = $"demo-user-{contextProvider.State.SessionId}";
     Console.WriteLine($"Container Tag: {contextProvider.ContainerTag}\n");

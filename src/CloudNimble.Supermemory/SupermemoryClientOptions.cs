@@ -1,13 +1,46 @@
+using Microsoft.Extensions.Configuration;
+
 namespace CloudNimble.Supermemory
 {
 
     /// <summary>
     /// Configuration options for the <see cref="SupermemoryClient"/>.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This class is designed to be used with the .NET Options pattern for configuration binding.
+    /// Configuration can come from any .NET configuration source:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><description><c>appsettings.json</c> / <c>appsettings.{Environment}.json</c></description></item>
+    /// <item><description>Environment variables (e.g., <c>Supermemory__ApiKey</c>)</description></item>
+    /// <item><description>User secrets (for local development)</description></item>
+    /// <item><description>Azure Key Vault, AWS Secrets Manager, etc.</description></item>
+    /// <item><description>Command line arguments</description></item>
+    /// </list>
+    /// <para>
+    /// Example configuration in <c>appsettings.json</c>:
+    /// <code>
+    /// {
+    ///   "Supermemory": {
+    ///     "ApiKey": "your-api-key",
+    ///     "BaseUrl": "https://api.supermemory.ai",
+    ///     "Timeout": "00:01:00",
+    ///     "MaxRetries": 2
+    ///   }
+    /// }
+    /// </code>
+    /// </para>
+    /// </remarks>
     public class SupermemoryClientOptions
     {
 
         #region Constants
+
+        /// <summary>
+        /// The default configuration section name for <see cref="SupermemoryClientOptions"/>.
+        /// </summary>
+        public const string SectionName = "Supermemory";
 
         /// <summary>
         /// The default base URL for the Supermemory API.
@@ -30,10 +63,12 @@ namespace CloudNimble.Supermemory
 
         /// <summary>
         /// Gets or sets the API key for authentication.
-        /// This is required unless an <see cref="HttpClient"/> with pre-configured authorization is provided.
         /// </summary>
         /// <remarks>
-        /// The API key can also be set via the SUPERMEMORY_API_KEY environment variable.
+        /// This is required for authenticating with the Supermemory API.
+        /// The API key can be configured via any .NET configuration source,
+        /// such as environment variables (e.g., <c>Supermemory__ApiKey</c>),
+        /// user secrets, or <c>appsettings.json</c>.
         /// </remarks>
         public string? ApiKey { get; set; }
 
@@ -41,9 +76,6 @@ namespace CloudNimble.Supermemory
         /// Gets or sets the base URL for the Supermemory API.
         /// Defaults to <see cref="DefaultBaseUrl"/>.
         /// </summary>
-        /// <remarks>
-        /// The base URL can also be set via the SUPERMEMORY_BASE_URL environment variable.
-        /// </remarks>
         public string BaseUrl { get; set; } = DefaultBaseUrl;
 
         /// <summary>
@@ -58,86 +90,64 @@ namespace CloudNimble.Supermemory
         /// </summary>
         public int MaxRetries { get; set; } = DefaultMaxRetries;
 
-        /// <summary>
-        /// Gets or sets a custom <see cref="HttpClient"/> to use for requests.
-        /// If not provided, a new client will be created internally.
-        /// </summary>
-        /// <remarks>
-        /// When providing a custom HttpClient, ensure it has proper lifetime management
-        /// and is configured with appropriate handlers for connection pooling.
-        /// </remarks>
-        public HttpClient? HttpClient { get; set; }
-
-        #endregion
-
-        #region Constructors
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SupermemoryClientOptions"/> class.
-        /// </summary>
-        public SupermemoryClientOptions()
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SupermemoryClientOptions"/> class with an API key.
-        /// </summary>
-        /// <param name="apiKey">The API key for authentication.</param>
-        public SupermemoryClientOptions(string apiKey)
-        {
-            ApiKey = apiKey;
-        }
-
         #endregion
 
         #region Public Methods
 
         /// <summary>
-        /// Creates options from environment variables.
+        /// Loads configuration values from the specified section into this options instance.
+        /// This method is AOT-compatible and does not use reflection.
         /// </summary>
-        /// <returns>A new <see cref="SupermemoryClientOptions"/> instance configured from environment variables.</returns>
-        public static SupermemoryClientOptions FromEnvironment()
+        /// <param name="section">The configuration section to load from.</param>
+        public void LoadFrom(IConfigurationSection section)
         {
-            var options = new SupermemoryClientOptions
-            {
-                ApiKey = Environment.GetEnvironmentVariable("SUPERMEMORY_API_KEY")
-            };
+            ArgumentNullException.ThrowIfNull(section);
 
-            var baseUrl = Environment.GetEnvironmentVariable("SUPERMEMORY_BASE_URL");
-            if (!string.IsNullOrWhiteSpace(baseUrl))
+            var apiKey = section[nameof(ApiKey)];
+            if (!string.IsNullOrWhiteSpace(apiKey))
             {
-                options.BaseUrl = baseUrl;
+                ApiKey = apiKey;
             }
 
-            return options;
+            var baseUrl = section[nameof(BaseUrl)];
+            if (!string.IsNullOrWhiteSpace(baseUrl))
+            {
+                BaseUrl = baseUrl;
+            }
+
+            var timeoutStr = section[nameof(Timeout)];
+            if (!string.IsNullOrWhiteSpace(timeoutStr) && TimeSpan.TryParse(timeoutStr, out var timeout))
+            {
+                Timeout = timeout;
+            }
+
+            var maxRetriesStr = section[nameof(MaxRetries)];
+            if (!string.IsNullOrWhiteSpace(maxRetriesStr) && int.TryParse(maxRetriesStr, out var maxRetries))
+            {
+                MaxRetries = maxRetries;
+            }
         }
 
         /// <summary>
         /// Validates the options and throws if invalid.
         /// </summary>
-        /// <exception cref="InvalidOperationException">Thrown when required options are missing or invalid.</exception>
+        /// <exception cref="ArgumentException">Thrown when <see cref="ApiKey"/> is null or whitespace.</exception>
+        /// <exception cref="ArgumentException">Thrown when <see cref="BaseUrl"/> is null or whitespace.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <see cref="Timeout"/> is less than or equal to zero.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <see cref="MaxRetries"/> is negative.</exception>
         public void Validate()
         {
-            if (string.IsNullOrWhiteSpace(ApiKey) && HttpClient is null)
-            {
-                throw new InvalidOperationException(
-                    "The API key is required. Either provide an ApiKey or a pre-configured HttpClient. " +
-                    "You can also set the SUPERMEMORY_API_KEY environment variable.");
-            }
-
-            if (string.IsNullOrWhiteSpace(BaseUrl))
-            {
-                throw new InvalidOperationException("The BaseUrl cannot be null or empty.");
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(ApiKey);
+            ArgumentException.ThrowIfNullOrWhiteSpace(BaseUrl);
 
             if (Timeout <= TimeSpan.Zero)
             {
-                throw new InvalidOperationException("The Timeout must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(Timeout), Timeout, "The Timeout must be greater than zero.");
             }
 
             if (MaxRetries < 0)
             {
-                throw new InvalidOperationException("The MaxRetries cannot be negative.");
+                throw new ArgumentOutOfRangeException(nameof(MaxRetries), MaxRetries, "The MaxRetries cannot be negative.");
             }
         }
 

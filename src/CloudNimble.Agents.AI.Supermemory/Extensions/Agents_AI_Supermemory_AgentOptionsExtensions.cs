@@ -8,8 +8,17 @@ namespace Microsoft.Agents.AI
     /// <summary>
     /// Extension methods for configuring <see cref="ChatClientAgentOptions"/> with Supermemory providers.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// For most scenarios, use <c>AddSupermemoryAgent()</c> during service registration which handles
+    /// all DI wiring automatically. These extension methods are provided for advanced scenarios
+    /// where you need manual control over agent configuration.
+    /// </para>
+    /// </remarks>
     public static class Agents_AI_Supermemory_AgentOptionsExtensions
     {
+
+        #region WithSupermemoryContext
 
         /// <summary>
         /// Configures the agent to use Supermemory for semantic memory.
@@ -19,6 +28,12 @@ namespace Microsoft.Agents.AI
         /// <param name="providerOptions">Optional context provider configuration.</param>
         /// <param name="containerTagResolver">Optional custom container tag resolver.</param>
         /// <returns>The configured options for chaining.</returns>
+        /// <remarks>
+        /// <para>
+        /// For most scenarios, prefer using <c>AddSupermemoryAgent()</c> during service registration
+        /// which handles all DI wiring automatically.
+        /// </para>
+        /// </remarks>
         public static ChatClientAgentOptions WithSupermemoryContext(
             this ChatClientAgentOptions options,
             SupermemoryClient client,
@@ -40,6 +55,10 @@ namespace Microsoft.Agents.AI
             return options;
         }
 
+        #endregion
+
+        #region WithSupermemoryHistory
+
         /// <summary>
         /// Configures the agent to use Supermemory for chat history storage.
         /// </summary>
@@ -48,6 +67,12 @@ namespace Microsoft.Agents.AI
         /// <param name="providerOptions">Optional chat history provider configuration.</param>
         /// <param name="containerTagResolver">Optional custom container tag resolver.</param>
         /// <returns>The configured options for chaining.</returns>
+        /// <remarks>
+        /// <para>
+        /// For most scenarios, prefer using <c>AddSupermemoryAgent()</c> during service registration
+        /// which handles all DI wiring automatically.
+        /// </para>
+        /// </remarks>
         public static ChatClientAgentOptions WithSupermemoryHistory(
             this ChatClientAgentOptions options,
             SupermemoryClient client,
@@ -69,6 +94,10 @@ namespace Microsoft.Agents.AI
             return options;
         }
 
+        #endregion
+
+        #region WithSupermemory
+
         /// <summary>
         /// Configures the agent to use Supermemory for both memory and history.
         /// </summary>
@@ -78,6 +107,12 @@ namespace Microsoft.Agents.AI
         /// <param name="historyOptions">Optional chat history provider configuration.</param>
         /// <param name="containerTagResolver">Optional custom container tag resolver.</param>
         /// <returns>The configured options for chaining.</returns>
+        /// <remarks>
+        /// <para>
+        /// For most scenarios, prefer using <c>AddSupermemoryAgent()</c> during service registration
+        /// which handles all DI wiring automatically.
+        /// </para>
+        /// </remarks>
         public static ChatClientAgentOptions WithSupermemory(
             this ChatClientAgentOptions options,
             SupermemoryClient client,
@@ -93,6 +128,8 @@ namespace Microsoft.Agents.AI
 
             return options;
         }
+
+        #endregion
 
     }
 

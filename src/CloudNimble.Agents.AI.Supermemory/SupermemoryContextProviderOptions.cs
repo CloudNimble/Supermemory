@@ -1,4 +1,5 @@
 using CloudNimble.Supermemory;
+using Microsoft.Extensions.Configuration;
 
 namespace CloudNimble.Agents.AI.Supermemory
 {
@@ -6,8 +7,37 @@ namespace CloudNimble.Agents.AI.Supermemory
     /// <summary>
     /// Configuration options for the <see cref="SupermemoryContextProvider"/>.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This class is designed to be used with the .NET Options pattern for configuration binding.
+    /// Configuration can come from any .NET configuration source.
+    /// </para>
+    /// <para>
+    /// Example configuration in <c>appsettings.json</c>:
+    /// <code>
+    /// {
+    ///   "SupermemoryContext": {
+    ///     "DefaultContainerTag": "user-{sessionId}",
+    ///     "SearchLimit": 5,
+    ///     "MinimumSimilarityScore": 0.7,
+    ///     "UseProfileApi": true,
+    ///     "UseSearchApi": true
+    ///   }
+    /// }
+    /// </code>
+    /// </para>
+    /// </remarks>
     public class SupermemoryContextProviderOptions
     {
+
+        #region Constants
+
+        /// <summary>
+        /// The default configuration section name for <see cref="SupermemoryContextProviderOptions"/>.
+        /// </summary>
+        public const string SectionName = "SupermemoryContext";
+
+        #endregion
 
         #region Properties
 
@@ -97,6 +127,98 @@ namespace CloudNimble.Agents.AI.Supermemory
         /// Gets or sets default metadata to include with stored memories.
         /// </summary>
         public Dictionary<string, object>? DefaultMetadata { get; set; }
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Loads configuration values from the specified section into this options instance.
+        /// This method is AOT-compatible and does not use reflection.
+        /// </summary>
+        /// <param name="section">The configuration section to load from.</param>
+        public void LoadFrom(IConfigurationSection section)
+        {
+            ArgumentNullException.ThrowIfNull(section);
+
+            var defaultContainerTag = section[nameof(DefaultContainerTag)];
+            if (!string.IsNullOrWhiteSpace(defaultContainerTag))
+            {
+                DefaultContainerTag = defaultContainerTag;
+            }
+
+            var retrievalStrategyStr = section[nameof(RetrievalStrategy)];
+            if (!string.IsNullOrWhiteSpace(retrievalStrategyStr) && Enum.TryParse<MemoryRetrievalStrategy>(retrievalStrategyStr, out var retrievalStrategy))
+            {
+                RetrievalStrategy = retrievalStrategy;
+            }
+
+            var useProfileApiStr = section[nameof(UseProfileApi)];
+            if (!string.IsNullOrWhiteSpace(useProfileApiStr) && bool.TryParse(useProfileApiStr, out var useProfileApi))
+            {
+                UseProfileApi = useProfileApi;
+            }
+
+            var useSearchApiStr = section[nameof(UseSearchApi)];
+            if (!string.IsNullOrWhiteSpace(useSearchApiStr) && bool.TryParse(useSearchApiStr, out var useSearchApi))
+            {
+                UseSearchApi = useSearchApi;
+            }
+
+            var searchModeStr = section[nameof(SearchMode)];
+            if (!string.IsNullOrWhiteSpace(searchModeStr) && Enum.TryParse<SearchMode>(searchModeStr, out var searchMode))
+            {
+                SearchMode = searchMode;
+            }
+
+            var searchLimitStr = section[nameof(SearchLimit)];
+            if (!string.IsNullOrWhiteSpace(searchLimitStr) && int.TryParse(searchLimitStr, out var searchLimit))
+            {
+                SearchLimit = searchLimit;
+            }
+
+            var minimumSimilarityScoreStr = section[nameof(MinimumSimilarityScore)];
+            if (!string.IsNullOrWhiteSpace(minimumSimilarityScoreStr) && double.TryParse(minimumSimilarityScoreStr, out var minimumSimilarityScore))
+            {
+                MinimumSimilarityScore = minimumSimilarityScore;
+            }
+
+            var rerankResultsStr = section[nameof(RerankResults)];
+            if (!string.IsNullOrWhiteSpace(rerankResultsStr) && bool.TryParse(rerankResultsStr, out var rerankResults))
+            {
+                RerankResults = rerankResults;
+            }
+
+            var profileThresholdStr = section[nameof(ProfileThreshold)];
+            if (!string.IsNullOrWhiteSpace(profileThresholdStr) && double.TryParse(profileThresholdStr, out var profileThreshold))
+            {
+                ProfileThreshold = profileThreshold;
+            }
+
+            var enableConversationStorageStr = section[nameof(EnableConversationStorage)];
+            if (!string.IsNullOrWhiteSpace(enableConversationStorageStr) && bool.TryParse(enableConversationStorageStr, out var enableConversationStorage))
+            {
+                EnableConversationStorage = enableConversationStorage;
+            }
+
+            var storageFormatStr = section[nameof(StorageFormat)];
+            if (!string.IsNullOrWhiteSpace(storageFormatStr) && Enum.TryParse<ConversationStorageFormat>(storageFormatStr, out var storageFormat))
+            {
+                StorageFormat = storageFormat;
+            }
+
+            var storeUserMessagesOnlyStr = section[nameof(StoreUserMessagesOnly)];
+            if (!string.IsNullOrWhiteSpace(storeUserMessagesOnlyStr) && bool.TryParse(storeUserMessagesOnlyStr, out var storeUserMessagesOnly))
+            {
+                StoreUserMessagesOnly = storeUserMessagesOnly;
+            }
+
+            var instructionTemplate = section[nameof(InstructionTemplate)];
+            if (!string.IsNullOrWhiteSpace(instructionTemplate))
+            {
+                InstructionTemplate = instructionTemplate;
+            }
+        }
 
         #endregion
 

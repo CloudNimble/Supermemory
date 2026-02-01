@@ -3,6 +3,7 @@ using CloudNimble.Agents.AI.Supermemory;
 using CloudNimble.Supermemory;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CloudNimble.Agents.AI.Tests.Supermemory.Extensions
@@ -203,7 +204,9 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory.Extensions
 
         #endregion
 
-        #region AddSupermemoryAgentFramework Tests
+        #region AddSupermemoryAgentFramework Tests (Obsolete - kept for backwards compatibility)
+
+#pragma warning disable CS0618 // Type or member is obsolete
 
         [TestMethod]
         public void AddSupermemoryAgentFramework_RegistersBothProviders()
@@ -260,6 +263,8 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory.Extensions
             contextProvider!.ContainerTag.Should().Be("context-configured");
             historyProvider!.ContainerTag.Should().Be("history-configured");
         }
+
+#pragma warning restore CS0618 // Type or member is obsolete
 
         #endregion
 
@@ -319,10 +324,9 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory.Extensions
 
         private static SupermemoryClient CreateTestClient()
         {
-            return new SupermemoryClient(new SupermemoryClientOptions
-            {
-                HttpClient = new HttpClient()
-            });
+            var httpClient = new HttpClient { BaseAddress = new Uri("https://api.supermemory.ai") };
+            var options = Options.Create(new SupermemoryClientOptions { ApiKey = "test-api-key" });
+            return new SupermemoryClient(httpClient, options);
         }
 
         #endregion

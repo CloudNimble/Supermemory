@@ -3,6 +3,7 @@ using CloudNimble.Agents.AI.Supermemory;
 using CloudNimble.Supermemory;
 using FluentAssertions;
 using Microsoft.Agents.AI;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CloudNimble.Agents.AI.Tests.Supermemory.Extensions
@@ -300,10 +301,9 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory.Extensions
 
         private static SupermemoryClient CreateTestClient()
         {
-            return new SupermemoryClient(new SupermemoryClientOptions
-            {
-                HttpClient = new HttpClient()
-            });
+            var httpClient = new HttpClient { BaseAddress = new Uri("https://api.supermemory.ai") };
+            var options = Options.Create(new SupermemoryClientOptions { ApiKey = "test-api-key" });
+            return new SupermemoryClient(httpClient, options);
         }
 
         #endregion

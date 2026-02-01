@@ -4,6 +4,7 @@ using CloudNimble.Supermemory;
 using FluentAssertions;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CloudNimble.Agents.AI.Tests.Supermemory
@@ -284,11 +285,7 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory
         {
             // Arrange
             // Use a client that will fail when making API calls (no valid endpoint)
-            using var client = new SupermemoryClient(new SupermemoryClientOptions
-            {
-                HttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:1/") },
-                Timeout = TimeSpan.FromMilliseconds(100)
-            });
+            using var client = CreateTestClientWithTimeout(TimeSpan.FromMilliseconds(100));
             var options = new SupermemoryContextProviderOptions
             {
                 DefaultContainerTag = "test-container",
@@ -310,11 +307,7 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory
         public async Task InvokingAsync_WithSearchOnlyStrategy_ReturnsEmptyContextOnError()
         {
             // Arrange
-            using var client = new SupermemoryClient(new SupermemoryClientOptions
-            {
-                HttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:1/") },
-                Timeout = TimeSpan.FromMilliseconds(100)
-            });
+            using var client = CreateTestClientWithTimeout(TimeSpan.FromMilliseconds(100));
             var options = new SupermemoryContextProviderOptions
             {
                 DefaultContainerTag = "test-container",
@@ -335,11 +328,7 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory
         public async Task InvokingAsync_WithProfileOnlyStrategy_ReturnsEmptyContextOnError()
         {
             // Arrange
-            using var client = new SupermemoryClient(new SupermemoryClientOptions
-            {
-                HttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:1/") },
-                Timeout = TimeSpan.FromMilliseconds(100)
-            });
+            using var client = CreateTestClientWithTimeout(TimeSpan.FromMilliseconds(100));
             var options = new SupermemoryContextProviderOptions
             {
                 DefaultContainerTag = "test-container",
@@ -360,11 +349,7 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory
         public async Task InvokingAsync_WithBothStrategy_ReturnsEmptyContextOnError()
         {
             // Arrange
-            using var client = new SupermemoryClient(new SupermemoryClientOptions
-            {
-                HttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:1/") },
-                Timeout = TimeSpan.FromMilliseconds(100)
-            });
+            using var client = CreateTestClientWithTimeout(TimeSpan.FromMilliseconds(100));
             var options = new SupermemoryContextProviderOptions
             {
                 DefaultContainerTag = "test-container",
@@ -461,11 +446,7 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory
         public async Task InvokedAsync_WithApiError_DoesNotThrow()
         {
             // Arrange
-            using var client = new SupermemoryClient(new SupermemoryClientOptions
-            {
-                HttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:1/") },
-                Timeout = TimeSpan.FromMilliseconds(100)
-            });
+            using var client = CreateTestClientWithTimeout(TimeSpan.FromMilliseconds(100));
             var options = new SupermemoryContextProviderOptions
             {
                 DefaultContainerTag = "test-container",
@@ -508,11 +489,7 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory
         public async Task InvokedAsync_WithMarkdownFormat_DoesNotThrow()
         {
             // Arrange
-            using var client = new SupermemoryClient(new SupermemoryClientOptions
-            {
-                HttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:1/") },
-                Timeout = TimeSpan.FromMilliseconds(100)
-            });
+            using var client = CreateTestClientWithTimeout(TimeSpan.FromMilliseconds(100));
             var options = new SupermemoryContextProviderOptions
             {
                 DefaultContainerTag = "test-container",
@@ -531,11 +508,7 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory
         public async Task InvokedAsync_WithPlainTextFormat_DoesNotThrow()
         {
             // Arrange
-            using var client = new SupermemoryClient(new SupermemoryClientOptions
-            {
-                HttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:1/") },
-                Timeout = TimeSpan.FromMilliseconds(100)
-            });
+            using var client = CreateTestClientWithTimeout(TimeSpan.FromMilliseconds(100));
             var options = new SupermemoryContextProviderOptions
             {
                 DefaultContainerTag = "test-container",
@@ -554,11 +527,7 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory
         public async Task InvokedAsync_WithJsonFormat_DoesNotThrow()
         {
             // Arrange
-            using var client = new SupermemoryClient(new SupermemoryClientOptions
-            {
-                HttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:1/") },
-                Timeout = TimeSpan.FromMilliseconds(100)
-            });
+            using var client = CreateTestClientWithTimeout(TimeSpan.FromMilliseconds(100));
             var options = new SupermemoryContextProviderOptions
             {
                 DefaultContainerTag = "test-container",
@@ -577,11 +546,7 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory
         public async Task InvokedAsync_WithUserMessagesOnly_DoesNotThrow()
         {
             // Arrange
-            using var client = new SupermemoryClient(new SupermemoryClientOptions
-            {
-                HttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:1/") },
-                Timeout = TimeSpan.FromMilliseconds(100)
-            });
+            using var client = CreateTestClientWithTimeout(TimeSpan.FromMilliseconds(100));
             var options = new SupermemoryContextProviderOptions
             {
                 DefaultContainerTag = "test-container",
@@ -600,11 +565,7 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory
         public async Task InvokedAsync_WithDefaultMetadata_DoesNotThrow()
         {
             // Arrange
-            using var client = new SupermemoryClient(new SupermemoryClientOptions
-            {
-                HttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:1/") },
-                Timeout = TimeSpan.FromMilliseconds(100)
-            });
+            using var client = CreateTestClientWithTimeout(TimeSpan.FromMilliseconds(100));
             var options = new SupermemoryContextProviderOptions
             {
                 DefaultContainerTag = "test-container",
@@ -687,10 +648,24 @@ namespace CloudNimble.Agents.AI.Tests.Supermemory
 
         private static SupermemoryClient CreateTestClient()
         {
-            return new SupermemoryClient(new SupermemoryClientOptions
+            var httpClient = new HttpClient { BaseAddress = new Uri("https://api.supermemory.ai") };
+            var options = Options.Create(new SupermemoryClientOptions { ApiKey = "test-api-key" });
+            return new SupermemoryClient(httpClient, options);
+        }
+
+        private static SupermemoryClient CreateTestClientWithTimeout(TimeSpan timeout)
+        {
+            var httpClient = new HttpClient
             {
-                HttpClient = new HttpClient()
+                BaseAddress = new Uri("http://localhost:1/"),
+                Timeout = timeout
+            };
+            var options = Options.Create(new SupermemoryClientOptions
+            {
+                ApiKey = "test-api-key",
+                Timeout = timeout
             });
+            return new SupermemoryClient(httpClient, options);
         }
 
         private static AIContextProvider.InvokingContext CreateInvokingContext(string[] messages)
