@@ -93,7 +93,7 @@
     </PropertyGroup>
 
     <ItemGroup Condition=" $(IsDocumentationProject) != 'true' and $(IsTestProject) != 'true' and $(IsSampleProject) != 'true' ">
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.*" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.*" PrivateAssets="All" />
         <!--<InternalsVisibleTo Include="$(AssemblyName.Replace('CloudNimble.Supermemory', 'CloudNimble.Supermemory.Tests')), $(StrongNamePublicKey)" />-->
         <InternalsVisibleTo Include="$(AssemblyName.Replace('CloudNimble.Supermemory', 'CloudNimble.Supermemory.Tests'))" />
     </ItemGroup>
